@@ -1,0 +1,163 @@
+import pygame
+# import math
+# import random
+pygame.init()
+
+# MONOLITHIC VARIABLES
+# Set-Up Variables
+Running = True
+clock = pygame.time.Clock()
+i = 0
+frame_rate = 0
+debug_mode = 1
+
+# Window Variables
+window_width = 800
+window_height = 600
+window = pygame.display.set_mode((window_width, window_height))
+window_half_width = window_width // 2
+window_half_height = window_height // 2
+
+# Background Variables
+background = pygame.image.load("images/Background_1000_1000.png")
+background_width = background.get_width()
+background_height = background.get_height()
+background_x = 0
+background_y = 0
+
+# Player Variables
+player = pygame.image.load("images/Player_20_20.png")
+player_width = int(player.get_width())
+player_height = int(player.get_height())
+player_half_width = player_width // 2
+player_half_height = player_height // 2
+player_x = player_half_width
+player_y = 2 * window_height // 3
+player_horizontal_speed = 200
+
+# Player Jump Variables
+player_jump_speed = 300
+jump = False
+up = False
+player_y_start = player_y
+player_y_target = player_y - 150
+
+# Player State Variables
+player_state = 'free'  # Can be 'locked' or 'free'
+
+# Screen Movement Variables
+stage_width = background_width
+scroll_position = window_half_width
+player_movement_x = player_x
+player_movement_y = player_y
+
+# Font Variables
+font_a = pygame.font.Font("images/fonts/Notable-Regular.ttf", 32)
+font_b = pygame.font.Font("images/fonts/Notable-Regular.ttf", 16)
+
+# Color Variables
+white = (255, 255, 255)
+black = (0, 0, 0)
+
+# RUNNING THE PROGRAM
+while Running:
+
+    # Time and Quit Setup
+    delta_time = clock.tick() / 1000
+    event = pygame.event.poll()
+    mouse_buttons = pygame.mouse.get_pressed()
+    mouse_position = pygame.mouse.get_pos()
+    all_keys = pygame.key.get_pressed()
+    if event.type == pygame.QUIT or all_keys[pygame.K_ESCAPE]:
+        Running = False
+
+    # PLAYER STATE CALCULATOR
+    if player_state == 'free':
+        # Background Movement Calculator
+        if player_movement_x + player_width > stage_width:
+            player_movement_x = stage_width - player_width
+        if player_movement_x <= 0:
+            player_movement_x = 0
+        if player_movement_x < scroll_position:
+            player_x = player_movement_x
+        elif player_movement_x > stage_width - scroll_position:
+            player_x = player_movement_x - stage_width + window_width
+        else:
+            player_x = scroll_position
+            if all_keys[pygame.K_a] or all_keys[pygame.K_LEFT]:
+                background_x += player_horizontal_speed * delta_time
+            if all_keys[pygame.K_d] or all_keys[pygame.K_RIGHT]:
+                background_x -= player_horizontal_speed * delta_time
+
+        # Player Movement Input
+        if all_keys[pygame.K_a] or all_keys[pygame.K_LEFT]:
+            player_movement_x -= player_horizontal_speed * delta_time
+        if all_keys[pygame.K_d] or all_keys[pygame.K_RIGHT]:
+            player_movement_x += player_horizontal_speed * delta_time
+        if all_keys[pygame.K_SPACE]:
+            if player_y == player_y_start:
+                jump = True
+                up = True
+
+        # Jump Movement
+        if jump:
+            if up:
+                if player_y > player_y_target:
+                    player_y -= player_jump_speed * delta_time
+                else:
+                    player_y = player_y_target
+                    up = False
+            if not up:
+                if player_y < player_y_start:
+                    player_y += player_jump_speed * delta_time
+                else:
+                    player_y = player_y_start
+                    jump = False
+
+    # Non-Movement Player Input
+    if event.type == pygame.KEYDOWN:
+        if all_keys[pygame.K_p]:
+            debug_mode *= -1
+        if all_keys[pygame.K_o]:
+            if player_state == 'free':
+                player_state = 'locked'
+            else:
+                player_state = 'free'
+
+    # TEXT VARIABLES
+    # Player's Co-Ords Displayed Top-Left
+    player_co_ords_text = '({0},{1})'.format(int(player_x), int(player_y))
+    player_co_ords = font_a.render(player_co_ords_text, False, white, black)
+    player_co_ords_height = player_co_ords.get_height()
+
+    # Clock Tick Check
+    if i <= 100:
+        i += 1
+    else:
+        frame_rate = delta_time
+        i = 0
+    clock_tick_text = '({0})'.format(frame_rate)
+    clock_tick = font_a.render(clock_tick_text, False, white, black)
+
+    # Player State Check
+    player_state_check_text = 'State = {0}'.format(player_state)
+    player_state_check = font_b.render(player_state_check_text, False, white, black)
+    player_state_check_height = player_state_check.get_height()
+
+    # Draw the Program
+    window.blit(background, (int(background_x), int(background_y)),
+                (0, 0, int(background_width), int(background_height)))
+    window.blit(player, (int(player_x) - player_half_width, int(player_y)
+                         - player_half_height), (0, 0, int(player_width), int(player_height)))
+    # pygame.draw.circle(window, (0, 0, 0), (int(player_x), int(player_y)), 5)
+
+    # Debug Mode
+    if debug_mode == 1:
+        window.blit(player_co_ords, (0, 0))
+        window.blit(clock_tick, (0, player_co_ords_height))
+        window.blit(player_state_check, (0, window_height - player_state_check_height))
+
+    # Flip the Display
+    pygame.display.flip()
+
+pygame.quit()
