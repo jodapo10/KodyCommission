@@ -18,6 +18,8 @@ window_height = 600
 window = pygame.display.set_mode((window_width, window_height))
 window_half_width = window_width // 2
 window_half_height = window_height // 2
+window_third_width = window_width // 3
+window_third_height = window_height // 3
 
 # Background Variables
 background = pygame.image.load("images/Background_1000_1000.png")
@@ -88,10 +90,10 @@ while Running:
 
     if player_state == 'free':
         # Background Movement Calculator
-        if player_movement_x + player_width > stage_width:
-            player_movement_x = stage_width - player_width
-        if player_movement_x <= 0:
-            player_movement_x = 0
+        if player_movement_x + player_half_width > stage_width:
+            player_movement_x = stage_width - player_half_width
+        if player_movement_x <= 0 + player_half_width:
+            player_movement_x = 0 + player_half_width
         if player_movement_x < scroll_position:
             player_x = player_movement_x
         elif player_movement_x > stage_width - scroll_position:
@@ -138,6 +140,8 @@ while Running:
                 player_state = 'locked'
             else:
                 player_state = 'free'
+        if all_keys[pygame.K_i]:
+            Room = 'room_1'
 
     # TEXT VARIABLES
     # Player's Co-Ords Displayed Top-Left
@@ -162,6 +166,7 @@ while Running:
     # DRAW THE PROGRAM
     # Title Screen
     if Room == 'title':
+        # Draw the Moving Background
         title_background_a_x -= player_horizontal_speed * delta_time
         title_background_b_x -= player_horizontal_speed * delta_time
         title_background_a_width_x = title_background_a_x + title_background_a_width
@@ -170,11 +175,26 @@ while Running:
             title_background_b_x = title_background_a_width_x
         elif title_background_b_width_x <= window_width:
             title_background_a_x = title_background_b_width_x
-
         window.blit(title_background_a, (int(title_background_a_x), 0),
                     (0, 0, int(title_background_a_width), window_height))
         window.blit(title_background_b, (int(title_background_b_x), 0),
                     (0, 0, int(title_background_b_width), window_height))
+
+        # Draw a 'PLAY' Button
+        pygame.draw.rect(window, black, (window_third_width, window_third_height,
+                                         window_third_width, window_third_height))
+        play_button_text = 'PLAY'
+        play_button = font_a.render(play_button_text, False, black, white)
+        play_button_width = play_button.get_width()
+        play_button_height = play_button.get_height()
+        window.blit(play_button, (window_half_width - play_button_width // 2,
+                                  window_half_height - play_button_height // 2))
+        
+        # If clicked, Play
+        if mouse_buttons[0]:
+            if window_third_width <= mouse_position[0] <= 2 * window_third_width \
+                    and window_third_height <= mouse_position[1] <= 2 * window_third_height:
+                Room = 'room_1'
 
     # Room 1
     if Room == 'room_1':
