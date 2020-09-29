@@ -1,0 +1,258 @@
+import pygame
+# import math
+# import random
+pygame.init()
+
+# MONOLITHIC VARIABLES
+# Set-Up Variables
+Running = True
+clock = pygame.time.Clock()
+i = 0
+frame_rate = 0
+debug_mode = -1
+Room = 'title'  # Currently, there is 'title', 'room_1', and 'menu'
+
+# Window Variables
+window_width = 800
+window_height = 600
+window = pygame.display.set_mode((window_width, window_height))
+window_half_width = window_width // 2
+window_half_height = window_height // 2
+window_third_width = window_width // 3
+window_third_height = window_height // 3
+
+# Background Variables
+background_a = pygame.image.load("images/Background_1000_1000.png")
+background_a_width = background_a.get_width()
+background_a_height = background_a.get_height()
+background_a_x = 0
+background_a_y = 0
+background_b = pygame.image.load("images/Background_Green_1000_1000.png")
+background_b_width = background_b.get_width()
+background_b_height = background_b.get_height()
+background_b_x = background_a_x + background_a_width
+background_b_y = 0
+
+title_background_a = background_a
+title_background_b = background_b
+title_background_a_width = title_background_a.get_width()
+title_background_b_width = title_background_b.get_width()
+title_background_a_x = 0
+title_background_b_x = title_background_b_width
+
+# Player Variables
+player = pygame.image.load("images/Player_20_20.png")
+player_width = int(player.get_width())
+player_height = int(player.get_height())
+player_half_width = player_width // 2
+player_half_height = player_height // 2
+player_x = player_half_width
+player_y = 2 * window_height // 3
+player_horizontal_speed = 200
+
+# Player Jump Variables
+player_jump_speed = 300
+jump = False
+up = False
+acceleration = 2
+jump_height = 150
+player_y_start = player_y
+player_y_target = player_y - jump_height
+
+# Player State Variables
+player_state = 'free'  # Can be 'locked' or 'free'
+manual = -1
+
+# Screen Movement Variables
+stage_width = background_a_width + background_b_width
+scroll_position = window_half_width
+player_movement_x = player_x
+player_movement_y = player_y
+
+# Font Variables
+font_a = pygame.font.Font("images/fonts/Notable-Regular.ttf", 32)
+font_b = pygame.font.Font("images/fonts/Notable-Regular.ttf", 16)
+
+# Color Variables
+white = (255, 255, 255)
+black = (0, 0, 0)
+
+# RUNNING THE PROGRAM
+while Running:
+
+    # Time and Quit Setup
+    delta_time = clock.tick() / 1000
+    event = pygame.event.poll()
+    mouse_buttons = pygame.mouse.get_pressed()
+    mouse_position = pygame.mouse.get_pos()
+    all_keys = pygame.key.get_pressed()
+    if event.type == pygame.QUIT or all_keys[pygame.K_ESCAPE]:
+        Running = False
+
+    # PLAYER STATE CALCULATOR
+    # Room Set-Up
+    if Room == 'title':
+        player_state = 'locked'
+    elif Room == 'room_1' and manual == -1:
+        player_state = 'free'
+    if player_state == 'free':
+
+        # Background A Movement Calculator
+        if player_movement_x + player_half_width >= stage_width:
+            player_movement_x = stage_width - player_half_width
+        if player_movement_x <= 0 + player_half_width:
+            player_movement_x = 0 + player_half_width
+        if player_movement_x <= scroll_position:
+            player_x = player_movement_x
+        elif player_movement_x >= stage_width - scroll_position:
+            player_x = player_movement_x - stage_width + window_width
+        else:
+            player_x = scroll_position
+            if all_keys[pygame.K_a] or all_keys[pygame.K_LEFT]:
+                background_a_x += player_horizontal_speed * delta_time
+            if all_keys[pygame.K_d] or all_keys[pygame.K_RIGHT]:
+                background_a_x -= player_horizontal_speed * delta_time
+        if background_a_x >= 0:
+            background_a_x = 0
+        elif background_a_x <= window_width - stage_width:
+            background_a_x = window_width - stage_width
+        # Background B Movement Calculator
+        background_b_x = background_a_x + background_a_width
+
+        # Player Movement Input
+        if all_keys[pygame.K_a] or all_keys[pygame.K_LEFT]:
+            player_movement_x -= player_horizontal_speed * delta_time
+        if all_keys[pygame.K_d] or all_keys[pygame.K_RIGHT]:
+            player_movement_x += player_horizontal_speed * delta_time
+        if all_keys[pygame.K_SPACE]:
+            if player_y == player_y_start:
+                jump = True
+                up = True
+
+        # Jump Movement
+        if jump:
+            if up:
+                if player_y > player_y_target:
+                    player_y -= acceleration * (player_jump_speed * delta_time)
+                else:
+                    player_y = player_y_target
+                    up = False
+            if not up:
+                if player_y < player_y_start:
+                    player_y += acceleration * (player_jump_speed * delta_time)
+
+                else:
+                    player_y = player_y_start
+                    jump = False
+        # Jump Acceleration
+        if player_y > player_y_target + (2 * jump_height // 3):
+            acceleration = 4
+        elif player_y_target + (jump_height // 6) < player_y < player_y_target + (jump_height // 3):
+            acceleration = 1
+        elif player_y < player_y_target + (jump_height // 6):
+            acceleration = 0.75
+        else:
+            acceleration = 2
+
+    # Non-Movement Player Input
+    if event.type == pygame.KEYDOWN:
+        if all_keys[pygame.K_p]:
+            debug_mode *= -1
+        if all_keys[pygame.K_o]:
+            manual *= -1
+            if player_state == 'free':
+                player_state = 'locked'
+            else:
+                player_state = 'free'
+        if all_keys[pygame.K_i]:
+            Room = 'room_1'
+
+    # TEXT VARIABLES
+    # Player's Co-Ords Displayed Top-Left
+    player_co_ords_text = '({0},{1})'.format(int(player_x), int(player_y))
+    player_co_ords = font_a.render(player_co_ords_text, False, white, black)
+    player_co_ords_height = player_co_ords.get_height()
+
+    # Player Movement Position
+    player_movement_x_position_text = '{0}'.format(player_movement_x)
+    player_movement_x_position = font_b.render(player_movement_x_position_text, False, white, black)
+
+    # Clock Tick Check
+    if i <= 100:
+        i += 1
+    else:
+        frame_rate = delta_time
+        i = 0
+    clock_tick_text = '({0})'.format(frame_rate)
+    clock_tick = font_a.render(clock_tick_text, False, white, black)
+
+    # Player State Check
+    player_state_check_text = 'State = {0}'.format(player_state)
+    player_state_check = font_b.render(player_state_check_text, False, white, black)
+    player_state_check_height = player_state_check.get_height()
+
+    # Background X Position
+    background_x_position_text = '{0},{1}'.format(background_a_x, stage_width)
+    background_x_position = font_b.render(background_x_position_text, False, white, black)
+
+    # DRAW THE PROGRAM
+    # Title Screen
+    if Room == 'title':
+        # Draw the Moving Background
+        title_background_a_x -= player_horizontal_speed * delta_time
+        title_background_b_x -= player_horizontal_speed * delta_time
+        title_background_a_width_x = title_background_a_x + title_background_a_width
+        title_background_b_width_x = title_background_b_x + title_background_b_width
+        if 0 < title_background_a_width_x <= window_width:
+            title_background_b_x = title_background_a_width_x
+        elif title_background_b_width_x <= window_width:
+            title_background_a_x = title_background_b_width_x
+        window.blit(title_background_a, (int(title_background_a_x), 0),
+                    (0, 0, int(title_background_a_width), window_height))
+        window.blit(title_background_b, (int(title_background_b_x), 0),
+                    (0, 0, int(title_background_b_width), window_height))
+
+        # Draw a 'PLAY' Button
+        pygame.draw.rect(window, black, (window_third_width, window_third_height,
+                                         window_third_width, window_third_height))
+        play_button_text = 'PLAY'
+        play_button = font_a.render(play_button_text, False, black, white)
+        play_button_width = play_button.get_width()
+        play_button_height = play_button.get_height()
+        window.blit(play_button, (window_half_width - play_button_width // 2,
+                                  window_half_height - play_button_height // 2))
+
+        # If clicked, Play
+        if mouse_buttons[0]:
+            if window_third_width <= mouse_position[0] <= 2 * window_third_width \
+                    and window_third_height <= mouse_position[1] <= 2 * window_third_height:
+                Room = 'room_1'
+
+    # Room 1
+    if Room == 'room_1':
+        window.blit(background_a, (int(background_a_x), int(background_a_y)),
+                    (0, 0, int(background_a_width), int(background_a_height)))
+        window.blit(background_b, (int(background_b_x), int(background_b_y)),
+                    (0, 0, int(background_b_width), int(background_b_height)))
+        window.blit(player, (int(player_x) - player_half_width, int(player_y) - player_half_height),
+                    (0, 0, int(player_width), int(player_height)))
+
+    # Debug Mode
+    if debug_mode == 1:
+        window.blit(player_co_ords, (0, 0))
+        window.blit(clock_tick, (0, player_co_ords_height))
+        window.blit(player_state_check, (0, window_height - player_state_check_height))
+        window.blit(background_x_position, (0, window_height - 2 * player_state_check_height))
+        if Room == 'room_1':
+            window.blit(player_movement_x_position, (0, window_height - 3 * player_state_check_height))
+
+        # Jump Acceleration Check
+        pygame.draw.circle(window, white, (int(player_x) + 20, int(player_y_start)), 5)
+        pygame.draw.circle(window, white, (int(player_x) + 20, int(player_y_target)), 5)
+        pygame.draw.circle(window, black, (int(player_x) + 20, int(player_y_start) - int(jump_height) // 3), 5)
+        pygame.draw.circle(window, black, (int(player_x) + 20, int(player_y_target) + int(jump_height) // 3), 5)
+
+    # Flip the Display
+    pygame.display.flip()
+
+pygame.quit()
